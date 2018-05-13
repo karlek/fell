@@ -12,6 +12,18 @@ height = 20
 onStr  = "o"
 offStr = "·"
 
+-- Cells can only be in two different states: on or off.
+data Cell = On | Off deriving (Eq)
+
+instance Show Cell where
+  show On  = onStr
+  show Off = offStr
+
+instance Random Cell where
+  random g = case random g of
+    (True,  g') -> (On,  g')
+    (False, g') -> (Off, g')
+
 -- Law dictates how a neighborhood will change the middle cell.
 type Law = Neighborhood -> Cell
 
@@ -33,6 +45,9 @@ instance Show World where
 -- Automaton enforces laws upon a world.
 data Automaton = Automaton Law World
 
+instance Show Automaton where
+  show (Automaton law world) = show world
+
 -- bounds returns the size of the world.
 bounds :: World -> (Int,Int)
 bounds w = (width, height)
@@ -40,21 +55,6 @@ bounds w = (width, height)
     (c:cs) = cells w
     width  = length c
     height = length (c:cs)
-
-instance Show Automaton where
-  show (Automaton law world) = show world
-
--- Cells can only be in two different states: on or off.
-data Cell = On | Off deriving (Eq)
-
-instance Show Cell where
-  show On  = onStr
-  show Off = offStr
-
-instance Random Cell where
-  random g = case random g of
-    (True,  g') -> (On,  g')
-    (False, g') -> (Off, g')
 
 -- center returns the center cell of a neighborhood.
 center :: Neighborhood -> Cell
