@@ -3,6 +3,8 @@
 
 ![screenshot of fell](screenshot.png)
 
+---
+
 Cellular automaton in haskell with rules for the game of life.
 
 ## Installation & Run
