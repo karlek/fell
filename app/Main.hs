@@ -94,6 +94,9 @@ applyLaw :: Law -> World -> World
 applyLaw l w@(Closed _) = Closed . map (map l) . neighborhoods $ w
 applyLaw _ _ = error "not implemented"
 
+neighborWorld :: World -> [[Int]]
+neighborWorld = map (map (\x -> if isOn (center x) then neighbors x else 0)) . neighborhoods
+
 -- neighborhoods returns the neighborhoods for each cell in the world.
 neighborhoods :: World -> [[Neighborhood]]
 neighborhoods = splitIntoNines . padFrame
@@ -170,7 +173,26 @@ toImg (Automaton _ w) = vertCat . map colorize . cells $ w
 
 -- toPic creates a vty picture from an automaton world.
 toPic :: Automaton -> Picture
-toPic (Automaton _ w) = picForImage . vertCat . map colorize . cells $ w
+toPic = picForImage . toImg
+
+toNeighborImg :: Automaton -> Image
+toNeighborImg (Automaton _ w) = vertCat . map colorizeInt . neighborWorld $ w
+
+toNeighborPic :: Automaton -> Picture
+toNeighborPic = picForImage . toNeighborImg
+
+colorizeInt :: [Int] -> Image
+colorizeInt = horizCat . map cellIntColor
+
+cellIntColor :: Int -> Image
+cellIntColor n
+  | n == 0 = char (defAttr `withForeColor` brightBlack) . head $ offStr
+  | n == 1 = char (defAttr `withForeColor` magenta) character
+  | n == 2 = char (defAttr `withForeColor` blue) character
+  | n == 3 = char (defAttr `withForeColor` green) character
+  | n >= 4 = char (defAttr `withForeColor` red) character
+  where
+    character = head . show $ n
 
 -- colorize assigns a color to each cell individually.
 colorize :: [Cell] -> Image
@@ -199,7 +221,7 @@ graphicsLoop :: Vty -> Automaton -> IO ()
 graphicsLoop vty a = do
   let buffer       = string (defAttr `withForeColor` green) ""
       instructions = string (defAttr `withForeColor` blue) " --- [ (Q) Quit | (A) Auto | (N) Next iteration | (R) Random cell states ] --- "
-      game         = toImg a
+      game         = toNeighborImg a
       pic          = picForImage $ game <-> buffer <-> instructions
 
   update vty pic
@@ -220,6 +242,6 @@ graphicsLoop vty a = do
 -- auto automatically plays the next iteration forever.
 auto :: Vty -> Automaton -> IO ()
 auto vty a = do
-  let pic = toPic a
+  let pic = toNeighborPic a
   update vty pic
   auto vty (enforceLaw a)
